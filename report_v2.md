@@ -87,18 +87,20 @@
 
 整体思路以“感知—决策—执行—反馈”为主线，通过 GUI-Owl 的视觉理解与操作生成能力，将自然语言规则驱动的高层逻辑与底层界面交互有机结合，形成闭环式的智能操作系统。
 
-### （1）用户规则与决策层：规则驱动与策略生成  
+### （1）用户规则与决策层：语义理解与策略生成
+该层是系统的逻辑中枢，负责直接理解用户以自然语言定义的操作意图，并在界面状态发生变化时进行决策。
 
-该层是系统的逻辑中枢，负责接收用户以自然语言定义的操作规则，并在界面状态发生变化时进行决策。  
-实现上，将基于 **LangChain 框架** 构建轻量化的规则与推理引擎，结合 PromptTemplate 与 RuleChain 实现“**规则触发 + 模型推理**”的双重判断机制。  
+实现上，将基于 LangChain 框架构建一个统一的语义理解与决策引擎。其核心是利用LLM的深层推理能力，实现“状态语义解析 + 上下文决策”的一体化判断机制。
 
-运行流程如下：  
-1. 当下层传入新的界面语义描述后，规则引擎首先进行快速匹配，判断是否触发用户预设条件。  
-   例如，当检测到“消息列表存在未读标识”且来源为“工作群”时，系统判定该状态需响应。  
-2. 若规则被触发，则将当前状态信息传递给 LLM 推理模块，由模型生成高层策略方案，如“回复已收到，请稍后处理”等自然语言指令。  
-3. 最终输出的结果为自然语言的命令规划，并向下传递给执行代理。  
+运行流程描述如下：
 
-这种两级决策结构在保证响应速度与确定性的同时，也保留了模型在语义模糊场景下的灵活性，使系统能在复杂语境中保持稳健判断。
+当下层传入新的界面语义描述后，该描述将与用户预设的自然语言规则共同构成一个完整的决策上下文，直接输入给大型语言模型。
+
+LLM将基于其对界面状态和用户规则的统一语义理解，进行综合判断。例如，当模型理解到当前是“工作群发来未读消息”这一状态，并结合用户“重要消息需及时回复”的规则时，将直接生成高层的策略方案，如“通过聊天窗口回复消息：告知已收到，请稍后处理。”。
+
+最终输出的是基于深度语义理解的自然语言命令规划，并向下传递给执行代理。
+
+这种一体化决策结构，依赖模型对自然语言的深层理解，从而在保证语义精准的同时，赋予了系统应对复杂和模糊语境的强大灵活性。唯一需要多次测试的技术难点是调整大语言模型提示词，使其输出的自然语言指令符合GUI-Owl所需要的提示粒度。
 
 ### （2）GUI-Owl 智能体层：感知、解析与执行中枢  
 
@@ -119,7 +121,7 @@
   - `type("已收到")` → 文本输入；  
   - `swipe(direction="up")` → 滑动操作。  
 - 指令通过模拟触控框架（如 AndroidViewClient 或 uiautomator2）下发至实际设备，实现对界面的直接操控。  
-- 每次操作后自动触发重新感知流程，对比操作前后状态是否符合预期；若偏差存在，则触发回退或重新规划，保证执行的闭环稳定性。
+- 每次操作后对比操作前后状态是否符合预期；若偏差存在，则触发回退或重新规划，保证执行的闭环稳定性。
 
 ### （3）实际 GUI 层：环境接口与执行反馈  
 
@@ -202,9 +204,22 @@ TBD
 
 ---
 
-## 七、参考文献与AI使用声明
+## 七、参考与AI使用声明
 
 ---
+
+**关于开源项目**
+
+本项目主要使用的开源项目为GUI-Owl多模态模型，但如前所述本项目不旨在重新微调一个GUI特化的多模态模型，而是希望借助已有通用GUI模型的端到端功能与多智能体潜力探讨新的交互范式，因此理论上任何一个在GUI任务中表现较好的多模态模型都可以代替GUI-Owl。
+
+选择GUI-Owl作为核心的原因有二：
+
+1. 其为开源模型，参数量较小（7B，可运行在16GB显存上），便于本地部署与调试。
+
+2. 其是目前部分GUI任务的SOTA，相关表现良好，也是Mobile Agent v3的基座模型，已有验证过的多智能体场景。
+
+**关于参考文献**
+
 - Hong W, Wang W, Lv Q, Xu J, Yu W, Ji J, Wang Y, Wang Z, Dong Y, Ding M, Tang J. *CogAgent: A Visual Language Model for GUI Agents*, 2023.  
 - Lin K Q, Li L, Gao D, Yang Z, Wu S, Bai Z, Lei W, Wang L, Shou M Z. *ShowUI: One Vision-Language-Action Model for GUI Visual Agent*, 2024.  
 - Ye J, Zhang X, Xu H, Liu H, Wang J, Zhu Z, Zheng Z, Gao F, Cao J, Lu Z, et al. *Mobile-Agent-v3: Foundamental Agents for GUI Automation*, 2025.  
@@ -214,6 +229,8 @@ TBD
 - Wang Z, Xu H, Wang J, Zhang X, Yan M, Zhang J, Huang F, Ji H. *Mobile-Agent-E: Self-Evolving Mobile Assistant for Complex Tasks*, 2025.  
 - Wang J, Xu H, Jia H, Zhang X, Yan M, Shen W, Zhang J, Huang F, Sang J. *Mobile-Agent-v2: Mobile Device Operation Assistant with Effective Navigation via Multi-Agent Collaboration*, 2024.  
 - Wang J, Xu H, Ye J, Yan M, Shen W, Zhang J, Huang F, Sang J. *Mobile-Agent: Autonomous Multi-Modal Mobile Device Agent with Visual Perception*, 2024.
+
+**关于生成式AI的使用**
 
 本报告在初期技术草稿的基础上由AI整理完成框架，主要内容由个人完成。
 
